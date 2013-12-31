@@ -60,6 +60,7 @@ uint32_t fade_to;
 #define COUNT_DOWN_TIME 400
 #define SCORE_BLINKS 4
 #define ROUNDS 4
+#define LEVEL_BAR_PIXELS 20
 
 int *points;
 int points_1 = 0;
@@ -122,7 +123,7 @@ int pad_check() {
 int game_choice;
 
 void set_game(int game) {
-  if (game == MENU_GAME) game_choice = current_game;
+  if (game == MENU_GAME && current_game != MENU_GAME) game_choice = current_game;
   current_game = game;
   (*games[current_game].init_fun)();
 }
@@ -173,14 +174,14 @@ void menu_init() {
 
 void redvblue_init() {
   fade_to = 0;
-  color_2 = strip.Color(127,0,0);
-  color_1 = strip.Color(0,0,127);
+  color_1 = strip.Color(127,0,0);
+  color_2 = strip.Color(0,0,127);
   color = &color_1;
   points = &points_1;
   points_1 = 0;
   points_2 = 0;
   time = millis()+COUNT_DOWN_TIME;
-  turn = 20;
+  turn = LEVEL_BAR_PIXELS;
   rounds = ROUNDS;
   set_score();
   matrix.writeDisplay();
@@ -188,10 +189,10 @@ void redvblue_init() {
 }
 
 void set_score() {
-    matrix.writeDigitNum(0, (points_2 / 10), false);
-    matrix.writeDigitNum(1, (points_2 % 10), false);
-    matrix.writeDigitNum(3, (points_1 / 10), false);
-    matrix.writeDigitNum(4, (points_1 % 10), false);
+    matrix.writeDigitNum(0, (points_1 / 10), false);
+    matrix.writeDigitNum(1, (points_1 % 10), false);
+    matrix.writeDigitNum(3, (points_2 / 10), false);
+    matrix.writeDigitNum(4, (points_2 % 10), false);
     matrix.writeDigitRaw(2, 2); // central colon
 }
 
@@ -209,7 +210,7 @@ void set_pixel_brightness(int pixel,int brightness,uint32_t color) {
 }
 
 void score_flash() {
-  for(int i=0;i<4;i++) strip.setPixelColor(20+(3-i),rounds > i ? strip.Color(255,128,0) : 0);
+  for(int i=0;i<4;i++) strip.setPixelColor(LEVEL_BAR_PIXELS+(3-i),rounds > i ? strip.Color(255,128,0) : 0);
   strip.show();
   for(int i=0;i<SCORE_BLINKS*2;i++) {
     if (i%2) {
@@ -221,7 +222,7 @@ void score_flash() {
     matrix.writeDisplay();
     delay(500);
   }
-  for(int i=0;i<4;i++) strip.setPixelColor(20+(3-i),0);
+  for(int i=0;i<4;i++) strip.setPixelColor(LEVEL_BAR_PIXELS+(3-i),0);
   strip.show();
 }
 
@@ -237,7 +238,7 @@ void game_over() {
     c2 = color_2;
   };
   for(long i=0;!pad_check();i++) {
-     for(int p=0;p<4;p++) strip.setPixelColor(20+p,(i%2)? c1 : c2);
+     for(int p=0;p<4;p++) strip.setPixelColor(LEVEL_BAR_PIXELS+p,(i%2)? c1 : c2);
      strip.show();
      delay(500);
   }
@@ -253,7 +254,7 @@ void turn_check() {
     }
     strip.show();
     if (turn == -1) {
-      turn = 20;
+      turn = LEVEL_BAR_PIXELS;
       if (points == &points_1) {
         points = &points_2;
         color = &color_2;
@@ -312,7 +313,7 @@ void calibrate() {
   for(uint16_t i=0;i<num_pads;i++) {
       if (pads[i] > HIT_THRESHOLD ) current_pad = i;
   }
-  if (pads[PAD_L]> HIT_THRESHOLD && pads[PAD_R] > HIT_THRESHOLD) {
+  if (pads[PAD_M]> HIT_THRESHOLD && pads[PAD_R] > HIT_THRESHOLD) {
     set_game(MENU_GAME);
     return;
   }
@@ -343,6 +344,8 @@ void calibrate_menu() {
 //----------------------------------------------------------------------
 // FILL_IT
 
+#define STARTING_LEVEL_TIME 50
+
 long level_time;
 int level,level_minus;
 long second;
@@ -352,7 +355,7 @@ void fillit_init() {
   points = &points_1;
   color_1 = strip.Color(127,127,127);
   color = &color_1;
-  level_time = 10;
+  level_time = STARTING_LEVEL_TIME;
   level_minus = 10;
   level = 1;
   time = millis()+level_time*1000;
