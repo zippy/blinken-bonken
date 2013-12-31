@@ -523,27 +523,29 @@ void spd() {
       else time = millis()+1000;
     }
   }
-  if (pad == 0xF) {
-    if (!drawn) {
-      for(int i=0;i<LEVEL_BAR_PIXELS;i++) {
-        strip.setPixelColor(i, fade_to);
-        strip.show();
-        drawn = true;
+  else {
+    if (pad == 0xF) {
+      if (!drawn) {
+        for(int i=0;i<LEVEL_BAR_PIXELS;i++) {
+          strip.setPixelColor(i, fade_to);
+          strip.show();
+          drawn = true;
+        }
+      }
+      if (pad_check()) {
+        spd_init();
       }
     }
-    if (pad_check()) {
-      spd_init();
-    }
-  }
-  else {
-    if (m>time) {
-      time = millis()+10;
-      matrix.print((m-start_time)/10);
-      matrix.writeDigitRaw(2, 2); // central colon
-      matrix.writeDisplay();
-    }
-    if (pad_check()) {
-      pad |= 1<<pad_hit;
+    else {
+      if (m>time) {
+        time = millis()+10;
+        matrix.print((m-start_time)/10);
+        matrix.writeDigitRaw(2, 2); // central colon
+        matrix.writeDisplay();
+      }
+      if (pad_check()) {
+        pad |= 1<<pad_hit;
+      }
     }
   }
 }
