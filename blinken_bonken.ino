@@ -30,14 +30,16 @@ typedef struct {
 #define REDVBLUE_GAME 1
 #define FILLIT_GAME 2
 #define AIM_GAME 3
-#define CALIBRATE 4
+#define SPEED_GAME 4
+#define CALIBRATE 5
 
-const int game_count = 5;
+const int game_count = 6;
 Game games[game_count] = {
   {menu,menu_init,0},
   {redvblue,redvblue_init,redvblue_menu},
   {fillit,fillit_init,fillit_menu},
   {aim,aim_init,aim_menu},
+  {spd,spd_init,spd_menu},
   {calibrate,calibrate_init,calibrate_menu}};
 int current_game = REDVBLUE_GAME;
 
@@ -479,4 +481,76 @@ void aim_menu() {
 
 }
 
+
+//----------------------------------------------------------------------
+// SPEED GAME
+
+unsigned long start_time;
+int pad;
+int count_down;
+boolean drawn;
+
+void spd_init() {
+  clear_all();
+  start_time = 0;
+  time = 0;
+  color_1 = strip.Color(255,0,0);
+  color = &color_1;
+  
+  strip.setPixelColor(PAD_M_PIX, color_1);
+  strip.setPixelColor(PAD_B_PIX, color_1);
+  strip.setPixelColor(PAD_L_PIX, color_1);
+  strip.setPixelColor(PAD_R_PIX, color_1);
+  strip.show();
+  fade_to = strip.Color(0,0,255);
+  delay(500);
+  pad_hit = -1;
+  count_down = 3;
+  pad = 0;
+  drawn = false;
+}
+
+void spd() {
+  unsigned long m = millis();
+  if (start_time == 0) {
+    if (m>time) {
+      matrix.print(count_down--);
+      matrix.writeDisplay();
+      if (count_down < 0) {
+        time = millis()+10;
+        start_time = millis();
+      }
+      else time = millis()+1000;
+    }
+  }
+  if (pad == 0xF) {
+    if (!drawn) {
+      for(int i=0;i<LEVEL_BAR_PIXELS;i++) {
+        strip.setPixelColor(i, fade_to);
+        strip.show();
+        drawn = true;
+      }
+    }
+    if (pad_check()) {
+      spd_init();
+    }
+  }
+  else {
+    if (m>time) {
+      time = millis()+10;
+      matrix.print((m-start_time)/10);
+      matrix.writeDigitRaw(2, 2); // central colon
+      matrix.writeDisplay();
+    }
+    if (pad_check()) {
+      pad |= 1<<pad_hit;
+    }
+  }
+}
+void spd_menu() {
+  matrix.writeDigitRaw(0, 0x6D); // S
+  matrix.writeDigitRaw(1, 0x73); // P
+  matrix.writeDigitRaw(3, 0x5E); // d  
+  matrix.writeDigitRaw(4, 0x00); // _
+}
 
