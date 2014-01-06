@@ -1,5 +1,5 @@
+#include <Wire.h> 
 #include <Adafruit_NeoPixel.h>
-#include <Wire.h> // Enable this line if using Arduino Uno, Mega, etc.
 
 #define PIN 6
 
@@ -27,19 +27,19 @@ typedef struct {
 
 
 #define MENU_GAME 0
-#define REDVBLUE_GAME 1
-#define FILLIT_GAME 2
-#define AIM_GAME 3
-#define SPEED_GAME 4
+#define AIM_GAME 1
+#define SPEED_GAME 2
+#define FILLIT_GAME 3
+#define REDVBLUE_GAME 4
 #define CALIBRATE 5
 
 const int game_count = 6;
 Game games[game_count] = {
   {menu,menu_init,0},
-  {redvblue,redvblue_init,redvblue_menu},
-  {fillit,fillit_init,fillit_menu},
   {aim,aim_init,aim_menu},
   {spd,spd_init,spd_menu},
+  {fillit,fillit_init,fillit_menu},
+  {redvblue,redvblue_init,redvblue_menu},
   {calibrate,calibrate_init,calibrate_menu}};
 int current_game = REDVBLUE_GAME;
 
