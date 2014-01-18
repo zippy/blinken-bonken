@@ -19,6 +19,8 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(max_pixels, PIN, NEO_GRB + NEO_KHZ80
 
 Adafruit_7segment matrix = Adafruit_7segment();
 
+void (*fade_func)();
+
 typedef struct {
   void (*loop_fun)();
   void (*init_fun)();
@@ -28,20 +30,23 @@ typedef struct {
 
 #define MENU_GAME 0
 #define AIM_GAME 1
-#define SPEED_GAME 2
-#define FILLIT_GAME 3
-#define REDVBLUE_GAME 4
-#define CALIBRATE 5
+#define MINE_GAME 2
+#define SPEED_GAME 3
+#define FILLIT_GAME 4
+#define REDVBLUE_GAME 5
+#define ALG_GAME 6
+#define CALIBRATE 7
 
-const int game_count = 6;
+const int game_count = CALIBRATE+1;
 Game games[game_count] = {
   {menu,menu_init,0},
   {aim,aim_init,aim_menu},
+  {mine,aim_init,mine_menu},
   {spd,spd_init,spd_menu},
   {fillit,fillit_init,fillit_menu},
   {redvblue,redvblue_init,redvblue_menu},
   {calibrate,calibrate_init,calibrate_menu}};
-int current_game = REDVBLUE_GAME;
+int current_game = AIM_GAME;
 
 const uint16_t num_pads = 4;
 uint16_t pads[4];
@@ -57,7 +62,7 @@ uint32_t fade_to;
 #define PAD_B_PIX 22
 #define PAD_L_PIX 20
 #define PAD_R_PIX 21
-#define HIT_THRESHOLD 100
+#define HIT_THRESHOLD 75
 #define pad_pixel(p) (23-p)
 #define COUNT_DOWN_TIME 400
 #define SCORE_BLINKS 4
@@ -104,6 +109,10 @@ int pad_check() {
        strip.setPixelColor(pad_pixel(pad_hit), fade_to);
        strip.show();
        pad_hit = -1;
+       if (fade_func != 0) {
+         (*fade_func)();
+         fade_func = 0;
+       }
     }
   }
   else {
@@ -129,6 +138,13 @@ void set_game(int game) {
   current_game = game;
   (*games[current_game].init_fun)();
 }
+
+void draw_score() {
+  matrix.print(*points);
+  matrix.writeDisplay();
+
+}
+
 
 //----------------------------------------------------------------------
 // MENU
@@ -428,12 +444,6 @@ void fillit_menu() {
 //----------------------------------------------------------------------
 // AIM
 
-void aim_score() {
-  matrix.print(*points);
-  matrix.writeDisplay();
-
-}
-
 int target;
 uint32_t targetColor = strip.Color(255,255,255);
 void aim_init() {
@@ -445,15 +455,17 @@ void aim_init() {
   points_1 = 0;
   points_2 = 0;
   pick_target();
-  aim_score();
+  draw_score();
 }
-
+void draw_target() {
+  for(int i=0;i<4;i++) strip.setPixelColor(pad_pixel(i),target == i ? targetColor : 0);
+  strip.show();
+}
 void pick_target() {
   int t;
   while((t = random(4)) == target);
   target = t;
-  for(int i=0;i<4;i++) strip.setPixelColor(pad_pixel(i),target == i ? targetColor : 0);
-  strip.show();
+  draw_target();
 }
 
 void aim() {
@@ -469,7 +481,7 @@ void aim() {
       color = &color_1;
       (*points)--;
     }
-    aim_score();
+    draw_score();
   }
 }
 
@@ -478,9 +490,36 @@ void aim_menu() {
   matrix.writeDigitRaw(1, 0x06); // I
   matrix.writeDigitRaw(3, 0x33); // M  
   matrix.writeDigitRaw(4, 0x27); // M
-
 }
 
+//----------------------------------------------------------------------
+// MINE
+
+void mine() {
+  if (pad_check()) {
+    int c = 1;
+    if (pad_hit == PAD_M) c++;
+    if (pad_hit != target) {
+      color = &color_2;
+      (*points)+=c;
+      fade_func = pick_target;
+    }
+    else {
+      color = &color_1;
+      (*points)--;
+      fade_func = draw_target;      
+    }
+    draw_score();
+  }
+}
+
+void mine_menu() {
+  matrix.writeDigitRaw(0, 0x33); // M  
+  matrix.writeDigitRaw(1, 0x27); // M
+  matrix.writeDigitRaw(3, 0x6E); // Y
+  matrix.writeDigitRaw(4, 0x37); // N
+
+}
 
 //----------------------------------------------------------------------
 // SPEED GAME
@@ -555,4 +594,5 @@ void spd_menu() {
   matrix.writeDigitRaw(3, 0x5E); // d  
   matrix.writeDigitRaw(4, 0x00); // _
 }
+
 
