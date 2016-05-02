@@ -37,6 +37,16 @@ typedef struct {
 #define ALG_GAME 6
 #define CALIBRATE 7
 
+//function prototypes used to be generated correctly, now we have to do them manually...
+void menu();
+void menu_init();
+void aim();void aim_init();void aim_menu();
+void mine();void mine_menu();
+void spd();void spd_init();void spd_menu();
+void fillit();void fillit_init();void fillit_menu();
+void redvblue();void redvblue_init();void redvblue_menu();
+void calibrate();void calibrate_init();void calibrate_menu();
+
 const int game_count = CALIBRATE+1;
 Game games[game_count] = {
   {menu,menu_init,0},
